@@ -16,6 +16,7 @@ using Entities.DTOs;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore.Internal;
 using System.Linq;
+using Business.BusinessAspects.Autofac;
 using DataAccess.Concrete.EntityFramework;
 
 namespace Business.Concrete
@@ -36,7 +37,8 @@ namespace Business.Concrete
             return new SuccessDataResult<Product>(_productDal.Get(p => p.ProductId == productId));
         }
 
-        //[ValidationAspect(typeof(ProductValidator))]
+        [SecuredOperation("product.add,admin")]
+        [ValidationAspect(typeof(ProductValidator))]
         public IResult Add(Product product)
         {
             IResult result = BusinessRules.Run(CheckIfProductNameExists(product.ProductName),
