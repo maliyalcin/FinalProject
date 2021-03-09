@@ -12,6 +12,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Business.Abstract;
 using Business.Concrete;
+using Core.DependencyResolves;
+using Core.Extensions;
 using Core.Utilities.IoC;
 using Core.Utilities.Security.JWT;
 using DataAccess.Abstract;
@@ -40,7 +42,6 @@ namespace WebAPI
             //services.AddSingleton<IProductService, ProductManager>();
             //services.AddSingleton<IProductDal, EfProductDal>();
 
-            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             var tokenOptions = Configuration.GetSection("TokenOptions").Get<TokenOptions>();
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -57,7 +58,10 @@ namespace WebAPI
                         IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey)
                     };
                 });
-            ServiceTool.Create(services);
+            services.AddDependencyResolves(new ICoreModule[]
+            {
+                new CoreModule()
+            });
         }
 
 

@@ -18,6 +18,9 @@ using Microsoft.EntityFrameworkCore.Internal;
 using System.Linq;
 using Business.BusinessAspects.Autofac;
 using DataAccess.Concrete.EntityFramework;
+using Core.Aspects.Autofac.Caching;
+using Core.Aspects.Autofac.Performance;
+using Core.Aspects.Autofac.Transaction;
 
 namespace Business.Concrete
 {
@@ -32,6 +35,8 @@ namespace Business.Concrete
             _categoryService = categoryService;
         }
 
+        [CacheAspect]
+        [PerformanceAspect(45)]
         public IDataResult<Product> GetById(int productId)
         {
             return new SuccessDataResult<Product>(_productDal.Get(p => p.ProductId == productId));
@@ -39,6 +44,7 @@ namespace Business.Concrete
 
         [SecuredOperation("product.add,admin")]
         [ValidationAspect(typeof(ProductValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Add(Product product)
         {
             IResult result = BusinessRules.Run(CheckIfProductNameExists(product.ProductName),
@@ -52,6 +58,7 @@ namespace Business.Concrete
             return new SuccessResult(Messages.ProductAdded);
         }
 
+        [CacheAspect]
         public IDataResult<List<Product>> GetAll()
         {
             //iş kodları
@@ -78,9 +85,25 @@ namespace Business.Concrete
             return new SuccessDataResult<List<ProductDetailDto>>(_productDal.GetProductDetails());
         }
 
+        [ValidationAspect(typeof(ProductValidator))]
+        [CacheRemoveAspect("IProductService.Get")] // IProductService deki tüm Get leri sil.
         public IResult Update(Product product)
         {
             throw new NotImplementedException();
+        }
+
+        [TransactionScopeAspect]
+        public IResult AddTransactionalTest(Product product)
+        {
+            Add(product);
+            if (product.UnitPrice<10)
+            {
+                throw new Exception("Error.");
+            }
+
+            Add(product);
+            return null;
+
         }
 
         private IResult CheckIfProductCountOfCategoryCorrect(int categoryId)
